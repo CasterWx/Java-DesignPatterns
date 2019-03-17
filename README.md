@@ -3,6 +3,8 @@
 23-DesignPatterns to Java
 
 * [工厂模式](#工厂模式)
+* [抽象工厂模式](#抽象工厂模式)
+* [单例设计模式-懒汉模式](#懒汉模式)
 
 # 工厂模式
 
@@ -66,4 +68,74 @@ public class Test {
 ![1](image/9.PNG)
 
 ![1](image/10.PNG)
+
+# 抽象工厂
+
+抽象工厂模式提供一个接口，用于创建相关或依赖对象的家族，而不需要明确指定具体类。可以理解成是多个工厂方法的组合。
+
+![1](image/11.PNG)
+
+![1](image/12.PNG)
+
+代码:
+
+![1](image/13.PNG)
+![1](image/14.PNG)
+
+
+# 单例设计模式-懒汉模式
+
+单例模式要要点就是一个类只会存在一个实例，要想达到这种效果，最重要的就是将构造方法设置为私有，然后通过static的方法来获取对象。
+
+![1](image/15.PNG)
+
+上述设计并不线程安全，因为在`lazySingleton = new LazySingletion()`这一步可能会发送线程的切换，导致出现多个lazySingletion对象。
+
+可以通过多线程Debug来测试。
+
+线程类:
+
+![1](image/16.PNG)
+
+测试类:
+
+![1](image/17.PNG)
+
+在多线程Debug时需要在断点处勾选`Thread`。
+
+![1](image/18.PNG)
+
+之后开始Debug。
+
+![1](image/19.png)
+
+开始时创建了两个LazyThread线程对象。
+
+![1](image/20.png)
+
+可以看到目前有三个进程，`Main`,`Thread-0`,`Thread-1`。
+
+我们切换至`Thread-0`将此线程执行到LazySingleton对象创建处。
+
+![1](image/21.png)
+
+此时lazySingleton还没有实例化，为null，所以`Thread-1`也可以通过if判断进入其中。我们将`Thread-1`线程也执行至此处。
+
+![1](image/22.png)
+
+接下来的顺序就无所谓了，两个线程都会去自己实例化lazySingleton对象。
+
+![1](image/23.png)
+
+执行完成后通过打印发现lazySingleton对象其实不是同一个。
+
+如果我们正常运行呢？
+
+![1](image/24.png)
+
+可以发现大部分情况下都会时同一个lazySingleton对象。
+
+为了保证线程安全性，可以通过`synchronized`来修饰getInstance方法。
+
+至于这种情况下的调试，在`Thread-0`进入`synchronized`块中时，切换至`Thread-1`会发现无法进入。
 
