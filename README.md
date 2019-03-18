@@ -4,9 +4,12 @@
 
 * [工厂模式](#工厂模式)
 * [抽象工厂模式](#抽象工厂模式)
-* [单例设计模式-懒汉模式](#懒汉模式)
+* [单例设计模式](#单例设计模式)
+    * [单例设计模式-懒汉模式](#懒汉模式)
+        * [多线程Debug分析错误](#多线程Debug分析错误)
+    * [单例设计模式-饿汉模式](#饿汉模式)
 
-# 工厂模式
+# <span id="工厂模式">工厂模式</span>
 
 * 只需要传入一个正确的参数，就可以获取你所需要的对象，而无须知道其创建细节。
 
@@ -69,7 +72,7 @@ public class Test {
 
 ![1](image/10.PNG)
 
-# 抽象工厂
+# <span id="抽象工厂">抽象工厂</span>
 
 抽象工厂模式提供一个接口，用于创建相关或依赖对象的家族，而不需要明确指定具体类。可以理解成是多个工厂方法的组合。
 
@@ -82,12 +85,15 @@ public class Test {
 ![1](image/13.PNG)
 ![1](image/14.PNG)
 
-
-# 单例设计模式-懒汉模式
+# <span id="单例设计模式">单例设计模式</span>
+ 
+## <span id="懒汉模式">单例设计模式-懒汉模式</span>
 
 单例模式要要点就是一个类只会存在一个实例，要想达到这种效果，最重要的就是将构造方法设置为私有，然后通过static的方法来获取对象。
 
 ![1](image/15.PNG)
+
+## <span id="多线程Debug分析错误">多线程Debug分析错误</span>
 
 上述设计并不线程安全，因为在`lazySingleton = new LazySingletion()`这一步可能会发送线程的切换，导致出现多个lazySingletion对象。
 
@@ -139,3 +145,54 @@ public class Test {
 
 至于这种情况下的调试，在`Thread-0`进入`synchronized`块中时，切换至`Thread-1`会发现无法进入。
 
+但是`synchronized`是重量级锁，使用它对我们程序的性能会有很大的影响，所以我们可以使用`双重验证`+`synchronized`的方法来创建单例。
+
+```java
+public class LazySingleton {
+    private static LazySingleton lazySingleton = null ;
+    private LazySingleton(){
+    }
+    public synchronized static LazySingleton getInstance(){
+        if (lazySingleton==null){
+            lazySingleton = new LazySingleton() ;
+        }
+        return lazySingleton ;
+    }
+    public synchronized static LazySingleton getInstance(){
+        if (lazySingleton==null){
+            synchronized (LazySingleton.class){
+                if (lazySingleton==null){
+                    lazySingleton = new LazySingleton();
+                }
+            }
+        }
+        return lazySingleton ;
+    }   
+}
+```
+
+这种方法看上去没有什么问题，可以提高效率，但是在`lazySingleton = new LazySingleton();`处，可能Jvm会对此处指令重排。
+
+正常来说是先初始化该对象地址，再将lazySingleton指向该地址。
+
+所以当一个线程进入锁后，在初始化lazySingleton时，没有先初始化该对象内存地址，而是先将lazySingleton指向分配的地址，会导致`lazySingleton!=null`，然后直接执行`return lazySingleton;` ，要解决这个问题，可以将`lazySingleton`添加关键字`volatile`。
+
+## <span id="饿汉模式">单例设计模式-饿汉模式</span>
+
+饿汉式的要点就是在创建实例时完成对象的初始化。
+
+```java
+public class HungrySingleton {
+    private static HungrySingleton hungrySingleton = null ;
+    static {
+        hungrySingleton = new HungrySingleton() ;
+    }
+    public static HungrySingleton getInstance(){
+        return hungrySingleton ;
+    }
+}
+```
+
+利用静态代码块来将该类在加载时完成初始化。
+
+# 原型模式
